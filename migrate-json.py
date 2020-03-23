@@ -2,18 +2,21 @@
    Cp data to my project.
    (data cannot be copied directly between buckets)
 """
+import subprocess
 import argparse
 import os
 import json
 
 parser = argparse.ArgumentParser(description="Migrate broad json files to gcp vpc")
 parser.add_argument("-d", "--delete", action="store_true", help="Delete local gs data.")
-parser.add_argument("project", type=str, help="GCP project")
+parser.add_argument("bucket", type=str, help="GCP project")
+parser.add_argument("sa", type=str, help="Service account json")
 parser.add_argument("json", type=str, help="Input json.")
 parser.add_argument("json_out", type=str, help="Output json.")
 
 
 def strip_gs(gs_url):
+    print('debug url', gs_url)
     return gs_url[5:]
 
 
@@ -44,16 +47,23 @@ def update_json(project, jsn, json_out):
 
     return urls
 
+def mk_auth_cmd(sa):
+    cmd = f'gcloud auth activate-service-account --key-file={sa}'
+    return cmd
 
-def cp_data(delete, project, url):
+def cp_data(delete, project, url, auth):
     """
     """
     src, dest = url
     src_set = set()
-    local = strip_gs(url)
-    src_set.add(local)
-    os.system(f"gsutil cp {src} .")
-    os.system(f"gsutil cp {local} {dest}")
+    local = strip_gs(src)
+    have_file = subprocess.run([f'{auth}; gsutil -q stat "{dest}" || echo "no"'], shell=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
+    print(have_file, dest)
+    if 'no\n' == have_file:
+        src_set.add(local)
+        os.system(f"gsutil cp {src} {local}")
+        print(local)
+        os.system(f"{auth}; gsutil cp {local} {dest}")
 
     # recursive cp data
     # if dest.endswith('.txt'):
@@ -63,15 +73,17 @@ def cp_data(delete, project, url):
             os.system(f"rm {local}")
 
 
-def migrate(delete_data, project, jsn, json_out):
-    urls = update_json(project, jsn, json_out)
-    # for url in urls:
-    #     cp_data(delete_data, project, url)
+def migrate(delete_data, bucket, sa, jsn, json_out):
+    urls = update_json(bucket, jsn, json_out)
+    auth = mk_auth_cmd(sa)
+    for url in urls:
+        print(url)
+        cp_data(delete_data, bucket, url, auth)
 
 
 def main(args=None):
     args = parser.parse_args(args=args)
-    migrate(args.delete, args.project, args.json, args.json_out)
+    migrate(args.delete, args.bucket, args.sa, args.json, args.json_out)
 
 
 if __name__ == "__main__":

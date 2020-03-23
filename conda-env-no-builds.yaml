@@ -2,8 +2,6 @@ name: mwdl
 channels:
   - defaults
 dependencies:
-  - ca-certificates=2020.1.1
-  - certifi=2019.11.28
   - libedit=3.1.20181209
   - libffi=3.2.1
   - ncurses=6.2
