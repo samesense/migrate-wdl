@@ -16,7 +16,7 @@ parser.add_argument("json_out", type=str, help="Output json.")
 
 
 def strip_gs(gs_url):
-    print('debug url', gs_url)
+    print("debug url", gs_url)
     return gs_url[5:]
 
 
@@ -47,9 +47,11 @@ def update_json(project, jsn, json_out):
 
     return urls
 
+
 def mk_auth_cmd(sa):
-    cmd = f'gcloud auth activate-service-account --key-file={sa}'
+    cmd = f"gcloud auth activate-service-account --key-file={sa}"
     return cmd
+
 
 def cp_data(delete, project, url, auth):
     """
@@ -57,9 +59,13 @@ def cp_data(delete, project, url, auth):
     src, dest = url
     src_set = set()
     local = strip_gs(src)
-    have_file = subprocess.run([f'{auth}; gsutil -q stat "{dest}" || echo "no"'], shell=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
+    have_file = subprocess.run(
+        [f'{auth}; gsutil -q stat "{dest}" || echo "no"'],
+        shell=True,
+        stdout=subprocess.PIPE,
+    ).stdout.decode("utf-8")
     print(have_file, dest)
-    if 'no\n' == have_file:
+    if "no\n" == have_file:
         src_set.add(local)
         os.system(f"gsutil cp {src} {local}")
         print(local)

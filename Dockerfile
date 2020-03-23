@@ -78,8 +78,8 @@ RUN conda env create --file=conda-env-no-builds.yaml
 #RUN echo "alias ac='/opt/conda/bin/conda activate mwdl'" > ~/.bashrc
 #SHELL ["conda", "run", "-n", "mwdl", ";", "/bin/bash", "-c"]
 #SHELL ["source", "/opt/conda/bin/activate", "mwdl", "/bin/bash", "-c"]
-COPY migrate-json.py .
-COPY migrate-wdl.py .
+COPY src/scripts/migrate-json.py .
+COPY src/scripts/migrate-wdl.py .
 #COPY init_conda.sh .
 #RUN source /opt/conda/bin/activate mwdl
 #ENTRYPOINT [ "/bin/bash" ]
