@@ -16,7 +16,7 @@ parser.add_argument("json_out", type=str, help="Output json.")
 
 
 def strip_gs(gs_url):
-    print("debug url", gs_url)
+    #print("debug url", gs_url)
     return gs_url[5:]
 
 
@@ -26,6 +26,12 @@ def mk_new_gs(project, gs_url):
     """
     path = strip_gs(gs_url)
     return f"gs://{project}/data/ref-data/{path}"
+
+def udate_url(field, project, gs_url, json_obj, url_ls):
+    new_gs = mk_new_gs(project, gs_url)
+    json_obj[field] = new_gs
+    if gs_url != new_gs:
+        url_ls.add((gs_url, new_gs))
 
 
 def update_json(project, jsn, json_out):
@@ -37,10 +43,28 @@ def update_json(project, jsn, json_out):
             val = j[field]
             if isinstance(val, str):
                 if val[:5].startswith("gs://"):
-                    gs_url = val
-                    new_gs = mk_new_gs(project, gs_url)
-                    j[field] = new_gs
-                    urls.add((gs_url, new_gs))
+                    udate_url(field, project, val, j, urls)
+            elif isinstance(val, dict):
+                for field2 in j[field]:
+                    val2 = j[field][field2] 
+                    if isinstance(val2, str):
+                        if val2[:5].startswith("gs://"):
+                            print('debug1', j[field][field2])
+                            udate_url(field2, project, val2, j[field], urls)
+                            print('debug2', j[field][field2])
+                    elif isinstance(val2, list):
+                        for idx, item in enumerate(val2):
+                            if item[:5].startswith("gs://"):
+                                new_gs = mk_new_gs(project, item)
+                                j[field][field2][idx] = new_gs
+                                if item != new_gs:
+                                    urls.add((item, new_gs))
+                    elif isinstance(val2, dict):
+                        for field3 in j[field][field2]:
+                            val3 = j[field][field2][field3] 
+                            if isinstance(val3, str):
+                                if val3[:5].startswith("gs://"):
+                                    udate_url(field3, project, val3, j[field][field2], urls)
 
     with open(json_out, "w") as fout:
         json.dump(j, fout)
